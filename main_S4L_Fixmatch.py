@@ -22,7 +22,7 @@ parser.add_argument('--method', type=str, default='S4L_FIXMATCH',
                     choices=['S+T', 'ENT', 'MME', 'UODA', 'S4L', 'S4L_FIXMATCH'],
                     help='MME is proposed method, ENT is entropy minimization,'
                          ' S+T is training only on labeled examples')
-parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                     help='learning rate (default: 0.001)')
 parser.add_argument('--multi', type=float, default=0.1, metavar='MLT',
                     help='learning rate multiplication')
@@ -254,7 +254,7 @@ def train():
         target_ul_rot = torch.cat((gt_labels_s[:, 1], gt_labels_t[:, 1], gt_labels_tu[:, 1]), 0)
         loss_rot = criterion(logits_ul_rot, target_ul_rot.cuda())
 
-        loss = loss_x + loss_rot
+        loss = loss_x + 0.7 * loss_rot
         loss.backward(retain_graph=True)
         optimizer_g.step()
         optimizer_f1.step()
