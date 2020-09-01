@@ -167,7 +167,7 @@ def return_dataset(args):
     if args.net == 'alexnet':
         bs = 32   # 32
     else:
-        bs = 12 # 64 # 24
+        bs = 24  # 64 # 24
     source_loader = torch.utils.data.DataLoader(source_dataset, batch_size=bs,
                                                 num_workers=3, shuffle=True,
                                                 drop_last=True)
@@ -181,7 +181,7 @@ def return_dataset(args):
                                     batch_size=min(bs,
                                                    len(target_dataset_val)),
                                     num_workers=3,
-                                    shuffle=True, drop_last=True)
+                                    shuffle=True, drop_last=True)  # drop_last should be set to False
     target_loader_unl = \
         torch.utils.data.DataLoader(target_dataset_unl,
                                     batch_size=bs, num_workers=3,
@@ -189,7 +189,7 @@ def return_dataset(args):
     target_loader_test = \
         torch.utils.data.DataLoader(target_dataset_test,
                                     batch_size=bs, num_workers=3,
-                                    shuffle=True, drop_last=True)
+                                    shuffle=True, drop_last=True)  # drop_last should be set to False
     return source_loader, target_loader, target_loader_unl, \
         target_loader_val, target_loader_test, class_list
 
@@ -304,7 +304,7 @@ def return_dataset_s4l_fixmatch(args):
     else:
         crop_size = 224
     data_transforms = {
-        'train_s': TransformRotate(mean=[0.485, 0.456, 0.406],
+        'train': TransformRotate(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225],
                                  crop_size=crop_size),
         'train_ut': TransformRotateFix(mean=[0.485, 0.456, 0.406],
@@ -325,9 +325,9 @@ def return_dataset_s4l_fixmatch(args):
         ]),
     }
     source_dataset = Imagelists_VISDA(image_set_file_s, root=root,
-                                      transform=data_transforms['train_s'], rotate=True)
+                                      transform=data_transforms['train'], rotate=True)
     target_dataset = Imagelists_VISDA(image_set_file_t, root=root,
-                                      transform=data_transforms['train_s'], rotate=True)
+                                      transform=data_transforms['train'], rotate=True)
     target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root,
                                           transform=data_transforms['val'])
     target_dataset_unl = Imagelists_VISDA(image_set_file_unl, root=root,
@@ -339,11 +339,13 @@ def return_dataset_s4l_fixmatch(args):
     if args.net == 'alexnet':
         bs = 32   # 32
     else:
-        bs = 2   # 24
-    num_workers = 0
-    source_loader = torch.utils.data.DataLoader(source_dataset, batch_size=bs,
-                                                num_workers=num_workers, shuffle=True,
-                                                drop_last=True)
+        bs = 10  # 24
+    num_workers = 3
+    source_loader = \
+        torch.utils.data.DataLoader(source_dataset,
+                                    batch_size=bs,
+                                    num_workers=num_workers, shuffle=True,
+                                    drop_last=True)
     target_loader = \
         torch.utils.data.DataLoader(target_dataset,
                                     batch_size=min(bs, len(target_dataset)),
@@ -354,7 +356,7 @@ def return_dataset_s4l_fixmatch(args):
                                     batch_size=min(bs,
                                                    len(target_dataset_val)),
                                     num_workers=num_workers,
-                                    shuffle=True, drop_last=True)
+                                    shuffle=True, drop_last=True)  # drop_last should be set to False
     target_loader_unl = \
         torch.utils.data.DataLoader(target_dataset_unl,
                                     batch_size=bs, num_workers=num_workers,
@@ -362,7 +364,7 @@ def return_dataset_s4l_fixmatch(args):
     target_loader_test = \
         torch.utils.data.DataLoader(target_dataset_test,
                                     batch_size=bs, num_workers=num_workers,
-                                    shuffle=True, drop_last=True)
+                                    shuffle=True, drop_last=True)  # drop_last should be set to False
     return source_loader, target_loader, target_loader_unl, \
         target_loader_val, target_loader_test, class_list
 
