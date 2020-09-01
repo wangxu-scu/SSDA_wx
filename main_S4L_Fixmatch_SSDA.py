@@ -13,6 +13,21 @@ from utils.utils import weights_init
 from utils.lr_schedule import inv_lr_scheduler
 from utils.return_dataset import *
 from utils.loss import entropy, adentropy
+
+import random
+
+
+def seed_torch(seed=1):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
+
 # Training settings
 parser = argparse.ArgumentParser(description='SSDA Classification')
 parser.add_argument('--steps', type=int, default=100000, metavar='N',
@@ -66,6 +81,8 @@ parser.add_argument('--threshold', type=float, default=0.95, metavar='THRE',
                     help='value of threshold')
 
 args = parser.parse_args()
+seed_torch(args.seed)
+
 print(args)
 print('Dataset %s Source %s Target %s Labeled num perclass %s Network %s' %
       (args.dataset, args.source, args.target, args.num, args.net))
@@ -85,18 +102,7 @@ record_file = os.path.join(record_dir,
                             args.target, args.num, exp_name))
 
 # torch.cuda.manual_seed(args.seed)
-import random
-def seed_torch(seed=1):
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed) # if you are using multi-GPU.
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
 
-seed_torch(args.seed)
 if args.net == 'resnet34':
     G = resnet34()
     inc = 512
@@ -134,6 +140,7 @@ else:
     F2 = Predictor(num_class=4, inc=inc,
                    temp=args.T)
 weights_init(F1) #### =====================
+weights_init(F2)
 lr = args.lr
 G.cuda()
 F1.cuda()
@@ -231,12 +238,12 @@ def train():
         gt_labels_tu = torch.transpose(gt_labels_tu, 1, 2)
         gt_labels_tu = gt_labels_tu.reshape(gt_labels_tu.shape[0] * gt_labels_tu.shape[1], gt_labels_tu.shape[2])
         zero_grad_all()
-        data = torch.cat((im_data_s, im_data_t, im_data_tu), 0)
+        data = torch.cat((im_data_s, im_data_t), 0)
         # target = torch.cat((gt_labels_s, gt_labels_t), 0)
         output = G(data)
         output_s = output[:len(im_data_s)]
-        output_t = output[len(im_data_s): len(im_data_s)+len(im_data_t)]
-        output_tu = output[len(im_data_s)+len(im_data_t):]
+        output_t = output[len(im_data_s):]
+
 
 
         #### Supervised Loss for unrotated images
@@ -251,7 +258,10 @@ def train():
 
 
         ## Unsupervised Loss
-        output_tu_strong = G(im_data_tu_strong)
+        data = torch.cat((im_data_tu, im_data_tu_strong), 0)
+        output = G(data)
+        output_tu = output[:len(im_data_tu)]
+        output_tu_strong = output[len(im_data_tu):]
         output_tu_no_rot = output_tu.index_select(0, torch.arange(0, len(output_tu), 4).cuda())
         logits_tu_weak = F1(output_tu_no_rot)
         logits_tu_strong = F1(output_tu_strong)
@@ -269,7 +279,7 @@ def train():
         ### Overall Loss
         loss = loss_x + loss_u + 0.7 * loss_rot
 
-        loss.backward(retain_graph=True) ### Is retain_graph=True necessary?
+        loss.backward()  ### Is retain_graph=True necessary?
         optimizer_g.step()
         optimizer_f1.step()
         optimizer_f2.step()
