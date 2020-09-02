@@ -71,7 +71,7 @@ parser.add_argument('--dataset', type=str, default='multi',
                     help='the name of dataset')
 parser.add_argument('--num', type=int, default=3,
                     help='number of labeled examples in the target')
-parser.add_argument('--patience', type=int, default=5, metavar='S',
+parser.add_argument('--patience', type=int, default=10, metavar='S',
                     help='early stopping to wait for improvment '
                          'before terminating. (default: 5 (5000 iterations))')
 parser.add_argument('--early', action='store_false', default=True,
